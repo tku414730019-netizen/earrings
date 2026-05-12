@@ -244,9 +244,10 @@ function draw() {
 
   textSize(18);
   text(
-    `偵測到手指數量：${detectedFingerCount}`,
+    `偵測到手指數量：${detectedFingerCount}
+    手背朝向鏡頭`,
     width / 2,
-    72
+    78
   );
 }
 
