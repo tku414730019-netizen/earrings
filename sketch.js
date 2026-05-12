@@ -77,7 +77,7 @@ function detectFingerCount() {
   const thumbIP  = hand.keypoints[3];
 
   // 鏡像後方向修正
-  if (thumbTip.x < thumbIP.x - 20) {
+  if (thumbTip.x < thumbIP.x - 10) {
     count++;
   }
 
@@ -110,7 +110,7 @@ function detectFingerCount() {
 async function setup() {
   
   // WEBGL 模式：支援 UV 貼圖 texture()
-  createCanvas(windowWidth, windowHeight, WEBGL);
+  createCanvas(windowWidth, windowHeight);
   frameRate(60);
 
   const hasCamera = await checkHasCamera();
@@ -177,7 +177,7 @@ async function checkHasCamera() {
 // ── draw ───────────────────────────────────────────────────
 function draw() {
   // WEBGL 原點在畫面中心，平移到左上角與 2D 行為一致
-  translate(-width / 2, -height / 2);
+  
 
   background('#297BB2');
   pulseT += 0.035;
@@ -231,18 +231,22 @@ function draw() {
   noStroke(); fill(255);
   textAlign(CENTER); textSize(18); textFont('serif');
   fill(255);
+  noStroke();
 
-  textAlign(CENTER);
+  textAlign(CENTER, CENTER);
 
   textSize(24);
-  text("414730019王曜嘉", width / 2, 45);
+  text(
+    "414730019王曜嘉",
+    width / 2,
+    40
+  );
 
   textSize(18);
-
   text(
     `偵測到手指數量：${detectedFingerCount}`,
     width / 2,
-    75
+    72
   );
 }
 
@@ -389,7 +393,7 @@ function initModeButton() {
     btn.style.background = displayMode === 'detect'
       ? 'rgba(41, 123, 178, 0.8)'
       : 'rgba(160, 50, 210, 0.85)';
-    if (displayMode === 'detect') { prevWristX = null; swipeVelX = 0; }
+    
   };
   btn.onmouseover = () => btn.style.transform = 'translateX(-50%) translateY(-2px)';
   btn.onmouseout  = () => btn.style.transform = 'translateX(-50%)';
