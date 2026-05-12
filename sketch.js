@@ -25,13 +25,11 @@ let uvCoords;
 // ── ml5 HandPose ───────────────────────────────────────────
 let handPose;
 let hands       = [];
-let prevWristX  = null;
-let swipeVelX   = 0;
-const SWIPE_THRESHOLD = 35;   // px/frame（在視頻座標空間）
+
 
 // ── 臉譜圖片 ───────────────────────────────────────────────
 let earringImgs = []; // 五種耳環圖片
-let handCooldown = 0;
+
 
 // ── preload ────────────────────────────────────────────────
 function preload() {
@@ -55,6 +53,46 @@ function preload() {
 
 function gotFaces(results) { faces = results; }
 function gotHands(results) { hands = results; }
+
+function detectFingerCount() {
+
+  if (hands.length === 0) return;
+
+  const hand = hands[0];
+
+  // ml5 handPose keypoints
+  const tips = [
+    8,   // 食指
+    12,  // 中指
+    16,  // 無名指
+    20   // 小指
+  ];
+
+  const pips = [
+    6,
+    10,
+    14,
+    18
+  ];
+
+  let count = 0;
+
+  // 判斷手指是否伸直
+  for (let i = 0; i < tips.length; i++) {
+
+    const tip = hand.keypoints[tips[i]];
+    const pip = hand.keypoints[pips[i]];
+
+    if (tip.y < pip.y) {
+      count++;
+    }
+  }
+
+  // 1~5 對應耳環
+  if (count >= 1 && count <= 5) {
+    currentEarring = count - 1;
+  }
+}
 
 // ── setup ──────────────────────────────────────────────────
 async function setup() {
@@ -155,8 +193,7 @@ function draw() {
   image(capture, 0, 0, w, h);
   pop();
 
-  // 手勢偵測（只在臉譜模式時作用）
-  detectHandGesture(vw);
+  detectFingerCount();
 
   // 臉部效果
   if (displayMode === 'detect') {
@@ -187,51 +224,7 @@ function draw() {
 // ── 手勢偵測：左右滑動切換臉譜 ────────────────────────────
 // flipped:false → wrist.x 是原始（未翻轉）座標
 // 鏡像後螢幕 X = vw - wrist.x；往右移動時螢幕 X 增加
-function detectHandGesture(vw) {
 
-  if (millis() < handCooldown) return;
-
-  if (displayMode !== 'accessory' || hands.length === 0) {
-    prevWristX = null;
-    swipeVelX  = 0;
-    return;
-  }
-
-  const rawX    = hands[0].keypoints[0].x;
-  const screenX = vw - rawX;
-
-  if (prevWristX !== null) {
-
-    const delta = screenX - prevWristX;
-
-    swipeVelX =
-      swipeVelX * 0.6 + delta * 0.4;
-
-    // 往右 → 下一個
-    if (swipeVelX > SWIPE_THRESHOLD) {
-
-      currentEarring =
-        (currentEarring + 1)
-        % earringImgs.length;
-
-      swipeVelX = 0;
-      handCooldown = millis() + 600;
-    }
-
-    // 往左 → 上一個
-    else if (swipeVelX < -SWIPE_THRESHOLD) {
-
-      currentEarring =
-        (currentEarring - 1 + earringImgs.length)
-        % earringImgs.length;
-
-      swipeVelX = 0;
-      handCooldown = millis() + 600;
-    }
-  }
-
-  prevWristX = screenX;
-}
 
 // ── 偵測模式：像素採樣填色 + 黃色網格線 ───────────────────
 function drawFaceMeshDetect(x, y, w, h, vw, vh) {
