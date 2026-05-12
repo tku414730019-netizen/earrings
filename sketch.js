@@ -16,6 +16,8 @@ let pulseT   = 0;
 let camReady = false;
 let noiseTexture;
 
+
+
 // ── ml5 FaceMesh ───────────────────────────────────────────
 let faceMesh;
 let faces    = [];
@@ -30,6 +32,9 @@ let hands       = [];
 // ── 臉譜圖片 ───────────────────────────────────────────────
 let earringImgs = []; // 五種耳環圖片
 
+// 只有一個 currentEarring，不要重複宣告
+// let currentEarring = 0;   <-- 已移除重複宣告
+let detectedFingerCount = 0;
 
 // ── preload ────────────────────────────────────────────────
 function preload() {
@@ -56,39 +61,46 @@ function gotHands(results) { hands = results; }
 
 function detectFingerCount() {
 
-  if (hands.length === 0) return;
+  if (hands.length === 0) {
+    detectedFingerCount = 0;
+    return;
+  }
 
   const hand = hands[0];
 
-  // ml5 handPose keypoints
-  const tips = [
-    8,   // 食指
-    12,  // 中指
-    16,  // 無名指
-    20   // 小指
-  ];
-
-  const pips = [
-    6,
-    10,
-    14,
-    18
-  ];
-
   let count = 0;
 
-  // 判斷手指是否伸直
+  // =========================
+  // 大拇指（X方向判斷）
+  // =========================
+  const thumbTip = hand.keypoints[4];
+  const thumbIP  = hand.keypoints[3];
+
+  // 鏡像後方向修正
+  if (thumbTip.x < thumbIP.x - 20) {
+    count++;
+  }
+
+  // =========================
+  // 其他四根（Y方向）
+  // =========================
+  const tips = [8, 12, 16, 20];
+  const pips = [6, 10, 14, 18];
+
   for (let i = 0; i < tips.length; i++) {
 
     const tip = hand.keypoints[tips[i]];
     const pip = hand.keypoints[pips[i]];
 
-    if (tip.y < pip.y) {
+    if (tip.y < pip.y - 15) {
       count++;
     }
   }
 
-  // 1~5 對應耳環
+  // 儲存偵測結果
+  detectedFingerCount = count;
+
+  // 只有 1~5 才切換耳環
   if (count >= 1 && count <= 5) {
     currentEarring = count - 1;
   }
@@ -218,7 +230,20 @@ function draw() {
   // 學號與名字
   noStroke(); fill(255);
   textAlign(CENTER); textSize(18); textFont('serif');
-  text("414730019王曜嘉", width / 2, 50);
+  fill(255);
+
+  textAlign(CENTER);
+
+  textSize(24);
+  text("414730019王曜嘉", width / 2, 45);
+
+  textSize(18);
+
+  text(
+    `偵測到手指數量：${detectedFingerCount}`,
+    width / 2,
+    75
+  );
 }
 
 // ── 手勢偵測：左右滑動切換臉譜 ────────────────────────────
